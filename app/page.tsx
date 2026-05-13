@@ -172,14 +172,10 @@ function PageInner() {
   return (
     <main>
       <header className="hero">
-        <div className="brand">
-          <span className="brand-mark">peggy.cash</span>
-          <span className="brand-tag">the cope calculator</span>
-        </div>
+        <h1 className="hero-title">the number you don&apos;t want to know.</h1>
         <p className="hero-pitch">
-          <strong>the number you don&apos;t want to know.</strong> paste your wallet. we replay every
-          memecoin you sold and tell you what you&apos;d have if you&apos;d just held. it will hurt.
-          that is the point.
+          paste your wallet. we replay every memecoin you sold and tell you what you&apos;d have
+          if you&apos;d just held. it will hurt. that is the point.
         </p>
       </header>
 

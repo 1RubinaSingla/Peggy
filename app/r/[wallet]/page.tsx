@@ -83,14 +83,9 @@ export default async function SharePage({
   return (
     <main>
       <header className="hero">
-        <a href="/" style={{ textDecoration: "none", color: "inherit" }}>
-          <div className="brand">
-            <span className="brand-mark">peggy.cash</span>
-            <span className="brand-tag">the cope calculator</span>
-          </div>
-        </a>
+        <h1 className="hero-title">someone else&apos;s receipt.</h1>
         <p className="hero-pitch">
-          a wallet&apos;s public receipt. you can score yours too —{" "}
+          a public scoring of this wallet&apos;s cope. you can score yours too —{" "}
           <a href="/" style={{ color: "var(--accent)", textDecoration: "none" }}>
             try it
           </a>

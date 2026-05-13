@@ -50,45 +50,194 @@ body::before {
 main {
   max-width: 720px;
   margin: 0 auto;
-  padding: 80px 24px 120px;
+  padding: 32px 24px 120px;
+}
+
+/* ─── navbar ─────────────────────────────────────────────────── */
+
+.navbar {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.nav-brand .brand-mark::before {
+  content: "▍";
+  color: var(--accent);
+  margin-right: 8px;
+}
+.nav-brand .brand-mark { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.nav-brand .brand-tag { color: var(--fg-muted); font-size: 12px; }
+.nav-brand .brand-tag::before { content: "// "; color: var(--fg-dim); }
+
+.nav-links {
+  display: flex;
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+.nav-links a {
+  color: var(--fg-muted);
+  text-decoration: none;
+  transition: color 120ms ease;
+  padding: 4px 0;
+  border-bottom: 1px solid transparent;
+}
+.nav-links a:hover { color: var(--fg); }
+.nav-links a.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .navbar { padding: 16px 16px 0; }
+  .nav-brand .brand-tag { display: none; }
 }
 
 /* ─── header ──────────────────────────────────────────────────── */
 
 .hero {
-  margin-bottom: 40px;
+  margin: 24px 0 40px;
 }
 
-.brand {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-.brand-mark {
-  font-size: 28px;
+.hero-title {
+  font-size: 32px;
   font-weight: 600;
   letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0 0 14px;
   color: var(--fg);
 }
-.brand-mark::before {
-  content: "▍";
-  color: var(--accent);
-  margin-right: 8px;
-}
-.brand-tag {
-  color: var(--fg-muted);
-  font-size: 13px;
-}
-.brand-tag::before { content: "// "; color: var(--fg-dim); }
 
 .hero-pitch {
   color: var(--fg-muted);
   max-width: 60ch;
-  margin: 16px 0 0;
+  margin: 0;
   font-size: 14px;
+  line-height: 1.55;
 }
 .hero-pitch strong { color: var(--fg); font-weight: 500; }
+
+/* ─── methodology / docs ──────────────────────────────────────── */
+
+.methodology {
+  /* inherits main width — just a layout class for semantics */
+}
+
+.doc-section {
+  margin-bottom: 36px;
+}
+
+.doc-section h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.doc-section p {
+  color: var(--fg-muted);
+  line-height: 1.65;
+  margin: 0 0 12px;
+  max-width: 64ch;
+}
+.doc-section p:last-child { margin-bottom: 0; }
+
+.formula {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  color: var(--fg);
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin: 12px 0 16px;
+  overflow-x: auto;
+}
+
+.tier-list {
+  list-style: none;
+  margin: 12px 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tier-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.tier-list li:last-child { border-bottom: 0; }
+.tier-list .range {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 100px;
+}
+.tier-list li > span:last-child {
+  color: var(--fg);
+  text-transform: lowercase;
+}
+
+.kv {
+  margin: 12px 0 16px;
+}
+.kv > div {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.kv > div:last-child { border-bottom: 0; }
+.kv dt {
+  color: var(--fg);
+  font-weight: 500;
+}
+.kv dd {
+  color: var(--fg-muted);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.num-list {
+  color: var(--fg-muted);
+  line-height: 1.65;
+  margin: 12px 0 16px;
+  padding-left: 24px;
+  max-width: 64ch;
+}
+.num-list li {
+  margin-bottom: 8px;
+}
+.num-list li::marker { color: var(--fg-dim); }
+
+.hl { color: var(--fg); }
+.hl-warn { color: var(--warn); }
+
+@media (max-width: 640px) {
+  .kv > div { grid-template-columns: 1fr; gap: 4px; }
+  .tier-list .range { min-width: 80px; }
+}
 
 /* ─── card primitive ──────────────────────────────────────────── */
 
