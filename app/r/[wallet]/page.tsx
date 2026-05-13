@@ -35,10 +35,15 @@ export async function generateMetadata({
   const headline = receipt.peakCopeSol > 0
     ? `${fmtSol(receipt.peakCopeSol)} fumbled · ${receipt.tier.name}`
     : receipt.tier.name;
-  const worst = receipt.worstSell?.symbol && receipt.worstSell.peakCopeSol > 0
-    ? ` worst fumble: $${receipt.worstSell.symbol} (${fmtSol(receipt.worstSell.peakCopeSol)})`
-    : "";
-  const description = `${shortAddr(wallet)} — ${headline}.${worst}`;
+
+  // Prefer the single-sell narrative for the description — specific stories travel.
+  const ws = receipt.worstSingleSell;
+  const single = ws && ws.fumbleSol > 0 && ws.symbol
+    ? ` worst single sell: $${ws.symbol} (${ws.peakMultiplier.toFixed(1)}x, ${fmtSol(ws.fumbleSol)} fumbled)`
+    : receipt.worstSell?.symbol && receipt.worstSell.peakCopeSol > 0
+      ? ` worst fumble: $${receipt.worstSell.symbol} (${fmtSol(receipt.worstSell.peakCopeSol)})`
+      : "";
+  const description = `${shortAddr(wallet)} — ${headline}.${single}`;
 
   const ogImage = `/api/og?wallet=${wallet}`;
 

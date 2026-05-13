@@ -13,6 +13,18 @@ export function shortAddr(a: string) {
   return `${a.slice(0, 4)}…${a.slice(-4)}`;
 }
 
+function fmtDate(ms: number) {
+  if (!ms) return "";
+  return new Date(ms).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function fmtTokens(n: number) {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(2)}K`;
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
 export function Receipt({ receipt: r }: { receipt: CopeReceipt }) {
   return (
     <section className="card receipt" aria-live="polite">
@@ -55,6 +67,21 @@ export function Receipt({ receipt: r }: { receipt: CopeReceipt }) {
           <div className="tier-name">{r.tier.name}</div>
           <div className="tier-blurb">{r.tier.blurb}</div>
         </div>
+
+        {r.worstSingleSell && r.worstSingleSell.fumbleSol > 0 && (
+          <div className="fumble">
+            <div className="fumble-tag">worst single sell</div>
+            <div className="fumble-symbol">${r.worstSingleSell.symbol ?? shortAddr(r.worstSingleSell.mint)}</div>
+            <div className="fumble-detail">
+              on {fmtDate(r.worstSingleSell.ts)}, sold {fmtTokens(r.worstSingleSell.tokensSold)} tokens
+              for {fmtSol(r.worstSingleSell.solReceived)}
+            </div>
+            <div className="fumble-detail">
+              ATH was {r.worstSingleSell.peakMultiplier.toFixed(1)}x your sell price
+            </div>
+            <div className="fumble-detail highlight">single-sell fumble: {fmtSol(r.worstSingleSell.fumbleSol)}</div>
+          </div>
+        )}
 
         {r.worstSell && r.worstSell.peakCopeSol > 0 && (
           <div className="fumble">

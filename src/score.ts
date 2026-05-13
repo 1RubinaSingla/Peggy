@@ -5,8 +5,8 @@
 // Aggregate algebra: identical whether the user sold at one price or twenty — sum of (p_i * a_i) = sold_usd.
 
 import { assignTier } from "./tiers.ts";
-import type { AthInfo, PnlPosition, PriceInfo } from "./tracker.ts";
-import type { CopeReceipt, ScoredLot } from "./types.ts";
+import type { AthInfo, PnlPosition, PriceInfo, Trade } from "./tracker.ts";
+import type { CopeReceipt, ScoredLot, WorstSingleSell } from "./types.ts";
 
 const WSOL = "So11111111111111111111111111111111111111112";
 const MIN_INVESTED_USD = 1;          // skip dust positions
@@ -34,6 +34,57 @@ export type Scored = {
   positions: ScoredPosition[];
   receipt: CopeReceipt;
 };
+
+// Scan individual sell trades and return the single biggest peak-cope fumble.
+// "Worst single sell" = one transaction, one moment in time — the quote-tweet hook.
+export function findWorstSingleSell(
+  trades: Trade[],
+  aths: Map<string, AthInfo>,
+  symbols: Map<string, string>,
+  solUsd: number,
+): WorstSingleSell | null {
+  let best: WorstSingleSell | null = null;
+
+  for (const t of trades) {
+    const mint = t.from.address;
+    const ath = aths.get(mint);
+    if (!ath || !ath.highest_price) continue;
+
+    const sellPriceUsd = t.from.priceUsd ?? 0;
+    const tokensSold = t.from.amount ?? 0;
+    const solReceived = t.to.amount ?? 0;
+    if (sellPriceUsd <= 0 || tokensSold <= 0) continue;
+
+    const athPriceUsd = ath.highest_price;
+    // Skip sells that happened AT or ABOVE the recorded ATH — either honest tops, or
+    // data noise. Either way there's no cope to extract.
+    if (athPriceUsd <= sellPriceUsd) continue;
+    // ATH must postdate the trade — couldn't have sold at a peak that hadn't happened yet
+    // if it predates this trade by a lot. Actually: peak BEFORE the trade is fine for
+    // "you could've sold higher then." So no time filter — peak >= trade time OR before
+    // is both valid cope.
+
+    const fumbleUsd = (athPriceUsd - sellPriceUsd) * tokensSold;
+    const fumbleSol = fumbleUsd / solUsd;
+
+    if (!best || fumbleSol > best.fumbleSol) {
+      best = {
+        txSig: t.tx,
+        ts: t.time,
+        mint,
+        symbol: t.from.token?.symbol ?? symbols.get(mint) ?? null,
+        tokensSold,
+        solReceived,
+        sellPriceUsd,
+        athPriceUsd,
+        peakMultiplier: athPriceUsd / sellPriceUsd,
+        fumbleSol,
+      };
+    }
+  }
+
+  return best;
+}
 
 export function scoreFromTracker(
   wallet: string,
@@ -124,6 +175,7 @@ export function scoreFromTracker(
     peakCopeSol,
     diamondCopeSol,
     worstSell: toScoredLot(worst),
+    worstSingleSell: null,  // filled in by the route after fetching trades
     bestHoldThatNeverWas: toScoredLot(bestHold),
     // Tier on Peak Cope: in a market where ~all memecoins go to zero, Diamond Cope
     // ends up at 0 for most degens, so peak captures the real fumble.

@@ -32,11 +32,39 @@ type PhantomProvider = {
   connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString(): string } }>;
 };
 
+const RECENT_KEY = "peggy:recent";
+const RECENT_MAX = 5;
+type RecentEntry = { address: string; lastUsed: number };
+
+function loadRecent(): RecentEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(address: string) {
+  if (typeof window === "undefined") return;
+  const list = loadRecent().filter((r) => r.address !== address);
+  list.unshift({ address, lastUsed: Date.now() });
+  window.localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+}
+
 function PageInner() {
   const searchParams = useSearchParams();
   const [wallet, setWallet] = useState(searchParams.get("wallet") ?? "");
   const [hasPhantom, setHasPhantom] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [recent, setRecent] = useState<RecentEntry[]>([]);
+
+  useEffect(() => {
+    setRecent(loadRecent());
+  }, []);
 
   useEffect(() => {
     const phantom = (window as unknown as { phantom?: { solana?: PhantomProvider } }).phantom?.solana;
@@ -118,7 +146,11 @@ function PageInner() {
     es.addEventListener("done", (ev: MessageEvent) => {
       const { empty, message, receipt } = JSON.parse(ev.data);
       if (empty) setEmptyMessage(message);
-      else setReceipt(receipt);
+      else {
+        setReceipt(receipt);
+        saveRecent(wallet.trim());
+        setRecent(loadRecent());
+      }
       setStatus("done");
       setProgress(null);
       es.close();
@@ -185,6 +217,24 @@ function PageInner() {
             >
               {connecting ? "connecting…" : "→ use my phantom wallet"}
             </button>
+          )}
+
+          {recent.length > 0 && (
+            <div className="recent-row">
+              <span className="depth-label">recent</span>
+              {recent.map((r) => (
+                <button
+                  key={r.address}
+                  type="button"
+                  className="chip recent-chip"
+                  disabled={status === "running"}
+                  onClick={() => setWallet(r.address)}
+                  title={r.address}
+                >
+                  {r.address.slice(0, 4)}…{r.address.slice(-4)}
+                </button>
+              ))}
+            </div>
           )}
 
           <div className="depth-row">

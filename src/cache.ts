@@ -11,9 +11,11 @@ const upstashEnabled = Boolean(URL && TOKEN);
 const redis = upstashEnabled ? new Redis({ url: URL!, token: TOKEN! }) : null;
 
 // Local dev fallback: in-memory map so share-URL + OG flows work without Upstash.
+// Pinned to globalThis so HMR-induced module reloads don't drop the cache between routes.
 // In serverless prod this is per-instance and useless across cold starts — Upstash takes over.
 type Entry = { value: unknown; expiresAt: number };
-const localCache = new Map<string, Entry>();
+const G = globalThis as unknown as { __peggyCache?: Map<string, Entry> };
+const localCache: Map<string, Entry> = G.__peggyCache ?? (G.__peggyCache = new Map());
 
 export const cacheEnabled = () => true; // always "enabled" — falls back to memory if no Redis
 

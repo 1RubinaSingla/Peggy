@@ -45,6 +45,19 @@ export type ScoredLot = ClosedLot & {
   exclusionReason?: string;
 };
 
+export type WorstSingleSell = {
+  txSig: string;
+  ts: number;            // ms
+  mint: string;
+  symbol: string | null;
+  tokensSold: number;
+  solReceived: number;
+  sellPriceUsd: number;
+  athPriceUsd: number;
+  peakMultiplier: number;
+  fumbleSol: number;     // (ath - sell) * tokens, converted to SOL at current rate
+};
+
 export type CopeReceipt = {
   wallet: string;
   tokensEvaluated: number;
@@ -53,6 +66,7 @@ export type CopeReceipt = {
   peakCopeSol: number;
   diamondCopeSol: number;
   worstSell: ScoredLot | null;
+  worstSingleSell: WorstSingleSell | null;
   bestHoldThatNeverWas: ScoredLot | null;
   tier: Tier;
   totalSoldPositions?: number;  // total positions with any sells (before slicing by depth)

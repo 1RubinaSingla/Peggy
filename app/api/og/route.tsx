@@ -40,6 +40,16 @@ function fmtSol(n: number) {
 function shortAddr(a: string) {
   return `${a.slice(0, 4)}…${a.slice(-4)}`;
 }
+function fmtTokens(n: number) {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(2)}K`;
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+function fmtShortDate(ms: number) {
+  if (!ms) return "";
+  return new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 function ErrorCard(message: string) {
   return new ImageResponse(
@@ -126,17 +136,31 @@ export async function GET(req: NextRequest) {
           >
             {r.tier.name}
           </div>
-          <div
-            style={{
-              fontSize: 22,
-              color: COLORS.muted,
-              marginTop: 16,
-              maxWidth: 1000,
-              lineHeight: 1.4,
-            }}
-          >
-            {r.tier.blurb}
-          </div>
+          {r.worstSingleSell && r.worstSingleSell.fumbleSol > 0 ? (
+            <div
+              style={{
+                fontSize: 26,
+                color: COLORS.fg,
+                marginTop: 18,
+                maxWidth: 1080,
+                lineHeight: 1.35,
+              }}
+            >
+              {`$${r.worstSingleSell.symbol ?? shortAddr(r.worstSingleSell.mint)} · ${fmtTokens(r.worstSingleSell.tokensSold)} sold for ${fmtSol(r.worstSingleSell.solReceived)} on ${fmtShortDate(r.worstSingleSell.ts)} · ATH ${r.worstSingleSell.peakMultiplier.toFixed(1)}x`}
+            </div>
+          ) : (
+            <div
+              style={{
+                fontSize: 22,
+                color: COLORS.muted,
+                marginTop: 16,
+                maxWidth: 1000,
+                lineHeight: 1.4,
+              }}
+            >
+              {r.tier.blurb}
+            </div>
+          )}
         </div>
 
         {/* footer row: numbers + worst fumble */}
@@ -181,7 +205,23 @@ export async function GET(req: NextRequest) {
                 {fmtSol(r.diamondCopeSol)}
               </div>
             </div>
-            {r.worstSell && r.worstSell.peakCopeSol > 0 && (
+            {r.worstSingleSell && r.worstSingleSell.fumbleSol > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: COLORS.dim,
+                    letterSpacing: 3,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  one-click fumble
+                </div>
+                <div style={{ fontSize: 44, fontWeight: 600, color: COLORS.warn, marginTop: 6 }}>
+                  {fmtSol(r.worstSingleSell.fumbleSol)}
+                </div>
+              </div>
+            ) : r.worstSell && r.worstSell.peakCopeSol > 0 ? (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div
                   style={{
@@ -200,7 +240,7 @@ export async function GET(req: NextRequest) {
                   {`${fmtSol(r.worstSell.peakCopeSol)} · ${r.worstSell.peakMultiplier.toFixed(1)}x`}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
           <div style={{ fontSize: 18, color: COLORS.dim }}>peggy.cash</div>
         </div>

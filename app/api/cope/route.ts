@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
-import { scoreFromTracker } from "../../../src/score.ts";
+import { findWorstSingleSell, scoreFromTracker } from "../../../src/score.ts";
 import {
   getAthBatch,
   getCurrentSolUsd,
   getMultiPrice,
   getTokenInfoBatch,
   getWalletPnl,
+  getWalletSellTrades,
 } from "../../../src/tracker.ts";
 import {
   cacheGet,
@@ -111,10 +112,18 @@ export async function GET(req: NextRequest) {
           for (const [mint, info] of infos) if (info.symbol) symbols.set(mint, info.symbol);
         }
 
+        send("step", { msg: "scanning trade history for worst single sell…" });
+        const mintsSet = new Set(mints);
+        const sellTrades = await getWalletSellTrades(wallet, mintsSet, 3);
+        send("step", { msg: `${sellTrades.length} sell trades scanned` });
+
         const { receipt } = scoreFromTracker(wallet, scoringTokens, aths, prices, solUsd, symbols);
+        const worstSingleSell = findWorstSingleSell(sellTrades, aths, symbols, solUsd);
+
         // Annotate receipt with scope context so the UI can show "top N of M sold positions".
         const scopedReceipt: CopeReceipt = {
           ...receipt,
+          worstSingleSell,
           totalSoldPositions: totalRanked,
           scoredPositions: mints.length,
         };

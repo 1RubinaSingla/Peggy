@@ -179,6 +179,21 @@ button.cta:disabled {
 .connect-link:hover:not(:disabled) { color: var(--accent); }
 .connect-link:disabled { color: var(--fg-dim); cursor: not-allowed; }
 
+/* ─── recent wallets ──────────────────────────────────────────── */
+
+.recent-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+}
+.recent-chip {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+}
+
 /* ─── depth selector ──────────────────────────────────────────── */
 
 .depth-row {
