@@ -8,27 +8,21 @@ if (!API_KEY) throw new Error("SOLANA_TRACKER_API_KEY missing in .env");
 const BASE = "https://data.solanatracker.io";
 const SOL_MINT = "So11111111111111111111111111111111111111112";
 
-// Soft rate-limit: free tier is request-budget capped (10k/mo), but bursts still 429.
-// One request per 350ms = ~2.8 rps. Plenty for spike scale.
-const MIN_GAP_MS = 350;
-let nextOk = 0;
-async function pace() {
-  const now = Date.now();
-  if (now < nextOk) await new Promise((r) => setTimeout(r, nextOk - now));
-  nextOk = Date.now() + MIN_GAP_MS;
-}
-
 const headers = { "x-api-key": API_KEY, accept: "application/json" } as const;
 
+// 429 backoff with large jitter to prevent thundering-herd retries under concurrency.
+// Concurrency comes from the caller via parallelMap; this fn only handles per-request retry.
 async function st<T>(path: string, init?: RequestInit): Promise<T> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    await pace();
+  const MAX_ATTEMPTS = 8;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const r = await fetch(`${BASE}${path}`, {
       ...init,
       headers: { ...headers, ...(init?.headers ?? {}) },
     });
     if (r.status === 429) {
-      await new Promise((res) => setTimeout(res, 2000 * (attempt + 1)));
+      const base = 600 * 2 ** attempt;
+      const jitter = Math.random() * 1500;
+      await new Promise((res) => setTimeout(res, base + jitter));
       continue;
     }
     if (!r.ok) {
@@ -37,7 +31,34 @@ async function st<T>(path: string, init?: RequestInit): Promise<T> {
     }
     return await r.json() as T;
   }
-  throw new Error(`tracker ${path}: rate-limited after 5 retries`);
+  throw new Error(`tracker ${path}: rate-limited after ${MAX_ATTEMPTS} retries`);
+}
+
+// Worker-pool parallelism. Runs `fn` on each item with at most `concurrency` in flight.
+// Results preserve input order. Progress fires after each completion.
+async function parallelMap<T, R>(
+  items: T[],
+  fn: (item: T, idx: number) => Promise<R>,
+  concurrency: number,
+  onComplete?: (done: number, total: number) => void,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  let done = 0;
+
+  async function worker() {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i], i);
+      done++;
+      onComplete?.(done, items.length);
+    }
+  }
+
+  const workers = Math.min(concurrency, items.length);
+  await Promise.all(Array.from({ length: workers }, () => worker()));
+  return results;
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -128,15 +149,31 @@ export async function getTokenInfo(mint: string): Promise<TokenInfo | null> {
   }
 }
 
+// Concurrency tuned for Solana Tracker free tier. Empirically: 5 trips so many 429s
+// that some calls exhaust retries and silently drop ATHs. 3 holds without losses.
+const ATH_CONCURRENCY = 3;
+const INFO_CONCURRENCY = 3;
+
 export async function getAthBatch(
   mints: string[],
   onProgress?: (done: number, total: number) => void,
 ): Promise<Map<string, AthInfo>> {
   const out = new Map<string, AthInfo>();
+  const results = await parallelMap(mints, (m) => getTokenAth(m), ATH_CONCURRENCY, onProgress);
   for (let i = 0; i < mints.length; i++) {
-    const ath = await getTokenAth(mints[i]);
-    if (ath) out.set(mints[i], ath);
-    onProgress?.(i + 1, mints.length);
+    if (results[i]) out.set(mints[i], results[i] as AthInfo);
+  }
+  return out;
+}
+
+export async function getTokenInfoBatch(
+  mints: string[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<Map<string, TokenInfo>> {
+  const out = new Map<string, TokenInfo>();
+  const results = await parallelMap(mints, (m) => getTokenInfo(m), INFO_CONCURRENCY, onProgress);
+  for (let i = 0; i < mints.length; i++) {
+    if (results[i]) out.set(mints[i], results[i] as TokenInfo);
   }
   return out;
 }

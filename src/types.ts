@@ -55,6 +55,8 @@ export type CopeReceipt = {
   worstSell: ScoredLot | null;
   bestHoldThatNeverWas: ScoredLot | null;
   tier: Tier;
+  totalSoldPositions?: number;  // total positions with any sells (before slicing by depth)
+  scoredPositions?: number;     // positions actually scored (depth-limited)
 };
 
 export type Tier = {

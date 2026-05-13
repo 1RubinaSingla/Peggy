@@ -1,12 +1,64 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import type { CopeReceipt } from "../src/types.ts";
+import { Receipt } from "./components/Receipt.tsx";
 
 type Status = "idle" | "running" | "done" | "error";
 
+type DepthPreset = "10" | "25" | "50" | "all" | "custom";
+
+// Empirical on Solana Tracker free tier. The throttle is bursty — first few calls fast,
+// then 1-3s/call once it kicks in. ~1.5s/token + 6s overhead matches observed runs.
+// Bump these once we move to a paid plan (will drop to ~0.4s/token).
+const PER_TOKEN_SECONDS = 1.5;
+const OVERHEAD_SECONDS = 6;
+
+function estimateSeconds(n: number) {
+  return Math.ceil(OVERHEAD_SECONDS + n * PER_TOKEN_SECONDS);
+}
+
 export default function Page() {
-  const [wallet, setWallet] = useState("");
+  return (
+    <Suspense fallback={null}>
+      <PageInner />
+    </Suspense>
+  );
+}
+
+type PhantomProvider = {
+  isPhantom?: boolean;
+  connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString(): string } }>;
+};
+
+function PageInner() {
+  const searchParams = useSearchParams();
+  const [wallet, setWallet] = useState(searchParams.get("wallet") ?? "");
+  const [hasPhantom, setHasPhantom] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+
+  useEffect(() => {
+    const phantom = (window as unknown as { phantom?: { solana?: PhantomProvider } }).phantom?.solana;
+    if (phantom?.isPhantom) setHasPhantom(true);
+  }, []);
+
+  async function connectPhantom() {
+    const phantom = (window as unknown as { phantom?: { solana?: PhantomProvider } }).phantom?.solana;
+    if (!phantom) return;
+    setConnecting(true);
+    try {
+      const res = await phantom.connect();
+      setWallet(res.publicKey.toString());
+    } catch {
+      // user dismissed
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  const [depth, setDepth] = useState<DepthPreset>("25");
+  const [customDepth, setCustomDepth] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [log, setLog] = useState<string[]>([]);
   const [progress, setProgress] = useState<{ kind: string; done: number; total: number } | null>(null);
@@ -14,6 +66,22 @@ export default function Page() {
   const [emptyMessage, setEmptyMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const logEndRef = useRef<HTMLDivElement | null>(null);
+
+  function resolvedLimit(): number {
+    if (depth === "all") return 0;
+    if (depth === "custom") {
+      const n = parseInt(customDepth, 10);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    }
+    return parseInt(depth, 10);
+  }
+
+  function estimateLabel(): string {
+    if (depth === "all") return "~30s–2min";
+    const n = resolvedLimit();
+    if (!n) return "—";
+    return `~${estimateSeconds(n)}s`;
+  }
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -34,7 +102,9 @@ export default function Page() {
     reset();
     setStatus("running");
 
-    const es = new EventSource(`/api/cope?wallet=${encodeURIComponent(wallet.trim())}`);
+    const limit = resolvedLimit();
+    const url = `/api/cope?wallet=${encodeURIComponent(wallet.trim())}${limit ? `&limit=${limit}` : ""}`;
+    const es = new EventSource(url);
 
     es.addEventListener("step", (ev: MessageEvent) => {
       const { msg } = JSON.parse(ev.data);
@@ -105,6 +175,51 @@ export default function Page() {
               {status === "running" ? "coping…" : "Cope"}
             </button>
           </form>
+
+          {hasPhantom && (
+            <button
+              type="button"
+              className="connect-link"
+              onClick={connectPhantom}
+              disabled={connecting || status === "running"}
+            >
+              {connecting ? "connecting…" : "→ use my phantom wallet"}
+            </button>
+          )}
+
+          <div className="depth-row">
+            <span className="depth-label">depth</span>
+            {(["10", "25", "50", "all"] as DepthPreset[]).map((d) => (
+              <button
+                key={d}
+                type="button"
+                className={`chip ${depth === d ? "selected" : ""}`}
+                disabled={status === "running"}
+                onClick={() => setDepth(d)}
+              >
+                {d === "all" ? "all" : `top ${d}`}
+              </button>
+            ))}
+            <input
+              type="text"
+              className="depth-custom"
+              placeholder="n"
+              inputMode="numeric"
+              maxLength={4}
+              value={depth === "custom" ? customDepth : ""}
+              disabled={status === "running"}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, "");
+                setCustomDepth(v);
+                setDepth(v ? "custom" : "25");
+              }}
+              onFocus={() => customDepth && setDepth("custom")}
+              aria-label="custom depth"
+            />
+            <span className="depth-estimate">
+              est. <strong>{estimateLabel()}</strong>
+            </span>
+          </div>
         </div>
       </section>
 
@@ -164,85 +279,3 @@ export default function Page() {
   );
 }
 
-function fmtSol(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M SOL`;
-  if (n >= 1_000) return `${n.toLocaleString(undefined, { maximumFractionDigits: 0 })} SOL`;
-  return `${n.toFixed(2)} SOL`;
-}
-function shortAddr(a: string) {
-  return `${a.slice(0, 4)}…${a.slice(-4)}`;
-}
-
-function Receipt({ receipt: r }: { receipt: CopeReceipt }) {
-  return (
-    <section className="card receipt" aria-live="polite">
-      <div className="receipt-meta">
-        <span className="group">
-          <span className="k">wallet</span>
-          <span className="v">{shortAddr(r.wallet)}</span>
-        </span>
-        <span className="group">
-          <span className="k">scored</span>
-          <span className="v">
-            {r.tokensEvaluated - r.tokensExcluded}
-            {r.tokensExcluded > 0 && <span className="k"> · {r.tokensExcluded} excluded</span>}
-          </span>
-        </span>
-      </div>
-
-      <div className="receipt-body">
-        <div className="stat">
-          <div className="stat-label">Diamond cope</div>
-          <div className="stat-value">{fmtSol(r.diamondCopeSol)}</div>
-          <div className="stat-caption">would-be value if you&apos;d just held</div>
-        </div>
-
-        <div className="stat">
-          <div className="stat-label">Peak cope</div>
-          <div className="stat-value secondary">{fmtSol(r.peakCopeSol)}</div>
-          <div className="stat-caption">
-            if you&apos;d sold every position at its top — god mode
-          </div>
-        </div>
-
-        <div className="divider" />
-
-        <div className="tier">
-          <div className="stat-label">Your tier</div>
-          <div className="tier-name">{r.tier.name}</div>
-          <div className="tier-blurb">{r.tier.blurb}</div>
-        </div>
-
-        {r.worstSell && r.worstSell.peakCopeSol > 0 && (
-          <div className="fumble">
-            <div className="fumble-tag">worst fumble</div>
-            <div className="fumble-symbol">${r.worstSell.symbol ?? shortAddr(r.worstSell.mint)}</div>
-            <div className="fumble-detail">
-              sold {r.worstSell.tokenAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
-              tokens for {fmtSol(r.worstSell.solProceeds)}
-            </div>
-            <div className="fumble-detail">
-              ATH was {r.worstSell.peakMultiplier.toFixed(1)}x your average sell price
-            </div>
-            <div className="fumble-detail highlight">fumbled {fmtSol(r.worstSell.peakCopeSol)}</div>
-          </div>
-        )}
-
-        {r.bestHoldThatNeverWas &&
-          r.bestHoldThatNeverWas.diamondCopeSol > 0 &&
-          r.bestHoldThatNeverWas.mint !== r.worstSell?.mint && (
-            <div className="fumble">
-              <div className="fumble-tag amber">best hold-that-never-was</div>
-              <div className="fumble-symbol">
-                ${r.bestHoldThatNeverWas.symbol ?? shortAddr(r.bestHoldThatNeverWas.mint)}
-              </div>
-              <div className="fumble-detail">still alive. still mooning. without you.</div>
-              <div className="fumble-detail highlight amber">
-                holding today would be worth +{fmtSol(r.bestHoldThatNeverWas.diamondCopeSol)}
-              </div>
-            </div>
-          )}
-      </div>
-    </section>
-  );
-}

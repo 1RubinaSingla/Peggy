@@ -4,9 +4,17 @@ import {
   getAthBatch,
   getCurrentSolUsd,
   getMultiPrice,
-  getTokenInfo,
+  getTokenInfoBatch,
   getWalletPnl,
 } from "../../../src/tracker.ts";
+import {
+  cacheGet,
+  cacheSet,
+  latestReceiptKey,
+  receiptKey,
+  RECEIPT_TTL_SECONDS,
+} from "../../../src/cache.ts";
+import type { CopeReceipt } from "../../../src/types.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +27,8 @@ export async function GET(req: NextRequest) {
   if (!wallet || !SOLANA_ADDR.test(wallet)) {
     return new Response(JSON.stringify({ error: "invalid wallet" }), { status: 400 });
   }
+  // Cap how many positions to score. 0 / unset = score everything.
+  const limit = Math.max(0, parseInt(req.nextUrl.searchParams.get("limit") ?? "0") || 0);
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -28,18 +38,46 @@ export async function GET(req: NextRequest) {
       };
 
       try {
+        // Cache check first — share-URL traffic and re-runs return instantly.
+        const cached = await cacheGet<CopeReceipt>(receiptKey(wallet, limit));
+        if (cached) {
+          send("step", { msg: "reading from the cope archive…" });
+          send("step", { msg: "found a previous reading." });
+          send("done", { empty: false, receipt: cached, cached: true });
+          controller.close();
+          return;
+        }
+
         send("step", { msg: "fetching wallet PnL from solana tracker…" });
         const pnl = await getWalletPnl(wallet);
-        const mints = Object.keys(pnl.tokens ?? {});
-        send("step", { msg: `${mints.length} positions found` });
+        const allEntries = Object.entries(pnl.tokens ?? {});
+        send("step", { msg: `${allEntries.length} positions found` });
 
-        if (!mints.length) {
+        if (!allEntries.length) {
           send("done", {
             empty: true,
             message: "no positions found. either this wallet is brand new, or you're already free.",
           });
           controller.close();
           return;
+        }
+
+        // Rank by USD sold (the only thing that drives cope size). Positions with no sells
+        // produce zero cope no matter what so skip them — saves ATH calls every time.
+        const ranked = allEntries
+          .filter(([, p]) => (p.sold_usd ?? 0) > 0)
+          .sort(([, a], [, b]) => (b.sold_usd ?? 0) - (a.sold_usd ?? 0));
+
+        const totalRanked = ranked.length;
+        const sliced = limit > 0 ? ranked.slice(0, limit) : ranked;
+        const mints = sliced.map(([m]) => m);
+        const scoringTokens: Record<string, (typeof pnl.tokens)[string]> = {};
+        for (const [m, p] of sliced) scoringTokens[m] = p;
+
+        if (limit > 0 && limit < totalRanked) {
+          send("step", { msg: `scoring top ${mints.length} of ${totalRanked} sold positions` });
+        } else {
+          send("step", { msg: `scoring ${mints.length} sold positions` });
         }
 
         send("step", { msg: "fetching current prices…" });
@@ -58,7 +96,7 @@ export async function GET(req: NextRequest) {
 
         send("step", { msg: "computing cope…" });
         const empty = new Map<string, string>();
-        const first = scoreFromTracker(wallet, pnl.tokens, aths, prices, solUsd, empty);
+        const first = scoreFromTracker(wallet, scoringTokens, aths, prices, solUsd, empty);
 
         const topMints = [...first.positions]
           .filter((p) => !p.excluded)
@@ -69,15 +107,26 @@ export async function GET(req: NextRequest) {
         const symbols = new Map<string, string>();
         if (topMints.length) {
           send("step", { msg: `fetching symbols for top ${topMints.length} positions…` });
-          for (const mint of topMints) {
-            const info = await getTokenInfo(mint);
-            if (info?.symbol) symbols.set(mint, info.symbol);
-          }
+          const infos = await getTokenInfoBatch(topMints);
+          for (const [mint, info] of infos) if (info.symbol) symbols.set(mint, info.symbol);
         }
 
-        const { receipt } = scoreFromTracker(wallet, pnl.tokens, aths, prices, solUsd, symbols);
+        const { receipt } = scoreFromTracker(wallet, scoringTokens, aths, prices, solUsd, symbols);
+        // Annotate receipt with scope context so the UI can show "top N of M sold positions".
+        const scopedReceipt: CopeReceipt = {
+          ...receipt,
+          totalSoldPositions: totalRanked,
+          scoredPositions: mints.length,
+        };
 
-        send("done", { empty: false, receipt });
+        // Await cache writes before closing so serverless doesn't kill us mid-set.
+        // ~50-200ms on Upstash, ~0 on local memory.
+        await Promise.all([
+          cacheSet(receiptKey(wallet, limit), scopedReceipt, RECEIPT_TTL_SECONDS),
+          cacheSet(latestReceiptKey(wallet), scopedReceipt, RECEIPT_TTL_SECONDS),
+        ]);
+
+        send("done", { empty: false, receipt: scopedReceipt });
         controller.close();
       } catch (err) {
         send("error", { message: err instanceof Error ? err.message : String(err) });

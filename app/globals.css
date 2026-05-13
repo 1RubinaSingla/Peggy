@@ -163,6 +163,92 @@ button.cta:disabled {
   cursor: not-allowed;
 }
 
+/* ─── phantom connect ─────────────────────────────────────────── */
+
+.connect-link {
+  font: inherit;
+  background: transparent;
+  border: 0;
+  color: var(--accent-dim);
+  padding: 8px 0 0;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: color 120ms ease;
+}
+.connect-link:hover:not(:disabled) { color: var(--accent); }
+.connect-link:disabled { color: var(--fg-dim); cursor: not-allowed; }
+
+/* ─── depth selector ──────────────────────────────────────────── */
+
+.depth-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+}
+.depth-label {
+  color: var(--fg-dim);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.chip {
+  font: inherit;
+  background: transparent;
+  color: var(--fg-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  font-size: 12px;
+}
+.chip:hover:not(.selected):not(:disabled) {
+  color: var(--fg);
+  border-color: var(--fg-dim);
+}
+.chip.selected {
+  background: var(--bg-elev-2);
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+.chip:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.depth-custom {
+  font: inherit;
+  width: 64px;
+  background: var(--bg-elev-2);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 4px 12px;
+  outline: none;
+  font-size: 12px;
+  text-align: center;
+  transition: border-color 120ms ease;
+}
+.depth-custom::placeholder { color: var(--fg-dim); }
+.depth-custom:focus { border-color: var(--accent-dim); }
+
+.depth-estimate {
+  margin-left: auto;
+  color: var(--fg-dim);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.depth-estimate strong {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .depth-estimate { margin-left: 0; width: 100%; padding-top: 4px; }
+}
+
 /* ─── log card ────────────────────────────────────────────────── */
 
 .log {

@@ -2,7 +2,7 @@
 // One PnL call → list of (mint, sold, sold_usd, ...). Then ATH per token + current prices in one batch.
 // Token symbols pulled lazily for the top reportable positions only.
 
-import { getAthBatch, getCurrentSolUsd, getMultiPrice, getTokenInfo, getWalletPnl } from "./tracker.ts";
+import { getAthBatch, getCurrentSolUsd, getMultiPrice, getTokenInfoBatch, getWalletPnl } from "./tracker.ts";
 import { scoreFromTracker } from "./score.ts";
 
 const wallet = process.argv[2];
@@ -56,10 +56,8 @@ const topMints = [...first.positions]
 const symbols = new Map<string, string>();
 if (topMints.length) {
   log(`fetching symbols for top ${topMints.length} positions…`);
-  for (const mint of topMints) {
-    const info = await getTokenInfo(mint);
-    if (info?.symbol) symbols.set(mint, info.symbol);
-  }
+  const infos = await getTokenInfoBatch(topMints);
+  for (const [mint, info] of infos) if (info.symbol) symbols.set(mint, info.symbol);
 }
 
 const { receipt: r, positions } = scoreFromTracker(wallet, pnl.tokens, aths, prices, solUsd, symbols);
