@@ -67,18 +67,17 @@ main {
 
 .nav-brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   text-decoration: none;
   color: inherit;
 }
-.nav-brand .brand-mark::before {
-  content: "▍";
-  color: var(--accent);
-  margin-right: 8px;
+.brand-logo {
+  border-radius: 8px;
+  display: block;
 }
 .nav-brand .brand-mark { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
-.nav-brand .brand-tag { color: var(--fg-muted); font-size: 12px; }
+.nav-brand .brand-tag { color: var(--fg-muted); font-size: 12px; align-self: baseline; padding-bottom: 4px; }
 .nav-brand .brand-tag::before { content: "// "; color: var(--fg-dim); }
 
 .nav-links {
@@ -101,6 +100,13 @@ main {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  border-bottom: 0 !important;
+}
+.nav-icon svg { width: 16px; height: 16px; display: block; }
 
 @media (max-width: 640px) {
   .navbar { padding: 16px 16px 0; }
