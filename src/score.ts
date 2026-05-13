@@ -6,7 +6,9 @@
 
 import { assignTier } from "./tiers.ts";
 import type { AthInfo, PnlPosition, PriceInfo, Trade } from "./tracker.ts";
-import type { CopeReceipt, ScoredLot, WorstSingleSell } from "./types.ts";
+import type { CopeReceipt, DayFromHell, ScoredLot, ShortestHold, WorstSingleSell } from "./types.ts";
+
+const DAY_MS = 86_400_000;
 
 const WSOL = "So11111111111111111111111111111111111111112";
 const MIN_INVESTED_USD = 1;          // skip dust positions
@@ -86,6 +88,103 @@ export function findWorstSingleSell(
   return best;
 }
 
+// Find the fumbled position the user exited the fastest. "You didn't even hold for an hour."
+// Requires both first-buy and first-sell timestamps from the raw trade stream.
+export function findShortestHold(
+  buys: Trade[],
+  sells: Trade[],
+  scoredByMint: Map<string, ScoredPosition>,
+  symbols: Map<string, string>,
+  solUsd: number,
+): ShortestHold | null {
+  const firstBuy = new Map<string, number>();
+  for (const t of buys) {
+    const mint = t.to.address;
+    const prev = firstBuy.get(mint);
+    if (prev === undefined || t.time < prev) firstBuy.set(mint, t.time);
+  }
+  const firstSell = new Map<string, number>();
+  for (const t of sells) {
+    const mint = t.from.address;
+    const prev = firstSell.get(mint);
+    if (prev === undefined || t.time < prev) firstSell.set(mint, t.time);
+  }
+
+  let best: ShortestHold | null = null;
+  for (const [mint, buyTs] of firstBuy) {
+    const sellTs = firstSell.get(mint);
+    if (sellTs === undefined || sellTs <= buyTs) continue;
+    const scored = scoredByMint.get(mint);
+    if (!scored || scored.excluded || scored.peakCopeUsd <= 0) continue;
+
+    const holdMs = sellTs - buyTs;
+    if (!best || holdMs < best.holdMs) {
+      best = {
+        mint,
+        symbol: scored.symbol ?? symbols.get(mint) ?? null,
+        firstBuyTs: buyTs,
+        firstSellTs: sellTs,
+        holdMs,
+        peakCopeSol: scored.peakCopeUsd / solUsd,
+        peakMultiplier: scored.peakMultiplier,
+      };
+    }
+  }
+  return best;
+}
+
+// Group sell trades by UTC day, sum per-sell peak-cope fumble, return the worst day.
+export function findDayFromHell(
+  sells: Trade[],
+  aths: Map<string, AthInfo>,
+  solUsd: number,
+): DayFromHell | null {
+  type DayBucket = { fumbleUsd: number; count: number; bySymbol: Map<string, { symbol: string; fumbleUsd: number }> };
+  const days = new Map<number, DayBucket>();
+
+  for (const t of sells) {
+    const mint = t.from.address;
+    const ath = aths.get(mint);
+    if (!ath?.highest_price) continue;
+    const sellPriceUsd = t.from.priceUsd ?? 0;
+    const tokens = t.from.amount ?? 0;
+    if (sellPriceUsd <= 0 || tokens <= 0) continue;
+    if (ath.highest_price <= sellPriceUsd) continue;
+
+    const fumbleUsd = (ath.highest_price - sellPriceUsd) * tokens;
+    const dayKey = Math.floor(t.time / DAY_MS) * DAY_MS;
+    const bucket = days.get(dayKey) ?? { fumbleUsd: 0, count: 0, bySymbol: new Map() };
+    bucket.fumbleUsd += fumbleUsd;
+    bucket.count += 1;
+    const symbol = t.from.token?.symbol ?? mint.slice(0, 4);
+    const existing = bucket.bySymbol.get(mint);
+    if (existing) existing.fumbleUsd += fumbleUsd;
+    else bucket.bySymbol.set(mint, { symbol, fumbleUsd });
+    days.set(dayKey, bucket);
+  }
+
+  if (!days.size) return null;
+  let worstDay: number | null = null;
+  let worstBucket: DayBucket | null = null;
+  for (const [day, bucket] of days) {
+    if (!worstBucket || bucket.fumbleUsd > worstBucket.fumbleUsd) {
+      worstDay = day;
+      worstBucket = bucket;
+    }
+  }
+  if (!worstBucket || !worstDay) return null;
+  const symbols = [...worstBucket.bySymbol.values()]
+    .sort((a, b) => b.fumbleUsd - a.fumbleUsd)
+    .slice(0, 5)
+    .map((s) => s.symbol);
+  return {
+    dateMs: worstDay,
+    fumbleSol: worstBucket.fumbleUsd / solUsd,
+    sellCount: worstBucket.count,
+    symbols,
+  };
+}
+
 export function scoreFromTracker(
   wallet: string,
   pnl: Record<string, PnlPosition>,
@@ -146,6 +245,12 @@ export function scoreFromTracker(
 
   const worst = included.length ? included.reduce((a, b) => (b.peakCopeUsd > a.peakCopeUsd ? b : a)) : null;
   const bestHold = included.length ? included.reduce((a, b) => (b.diamondCopeUsd > a.diamondCopeUsd ? b : a)) : null;
+  // Highest peak multiplier among fumbled positions. Captures relative regret independent
+  // of bag size — small position sold for 1/100th of ATH still earns a chapter.
+  const fumbled = included.filter((p) => p.peakCopeUsd > 0 && p.peakMultiplier >= 3);
+  const biggest = fumbled.length
+    ? fumbled.reduce((a, b) => (b.peakMultiplier > a.peakMultiplier ? b : a))
+    : null;
 
   // Adapt to existing CopeReceipt shape so the printer doesn't change.
   const toScoredLot = (p: ScoredPosition | null): ScoredLot | null => {
@@ -177,6 +282,7 @@ export function scoreFromTracker(
     worstSell: toScoredLot(worst),
     worstSingleSell: null,  // filled in by the route after fetching trades
     bestHoldThatNeverWas: toScoredLot(bestHold),
+    biggestCopeMultiplier: biggest && biggest.mint !== worst?.mint ? toScoredLot(biggest) : null,
     // Tier on Peak Cope: in a market where ~all memecoins go to zero, Diamond Cope
     // ends up at 0 for most degens, so peak captures the real fumble.
     tier: assignTier(peakCopeSol),

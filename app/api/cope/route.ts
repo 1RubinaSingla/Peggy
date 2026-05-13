@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
-import { findWorstSingleSell, scoreFromTracker } from "../../../src/score.ts";
+import { findDayFromHell, findShortestHold, findWorstSingleSell, scoreFromTracker } from "../../../src/score.ts";
 import {
   getAthBatch,
   getCurrentSolUsd,
   getMultiPrice,
   getTokenInfoBatch,
   getWalletPnl,
-  getWalletSellTrades,
+  getWalletTokenTrades,
 } from "../../../src/tracker.ts";
 import {
   cacheGet,
@@ -114,18 +114,24 @@ export async function GET(req: NextRequest) {
 
         send("step", { msg: "scanning trade history for worst single sell…" });
         const mintsSet = new Set(mints);
-        const sellTrades = await getWalletSellTrades(wallet, mintsSet, 3);
-        send("step", { msg: `${sellTrades.length} sell trades scanned` });
+        const { buys: buyTrades, sells: sellTrades } = await getWalletTokenTrades(wallet, mintsSet, 3);
+        send("step", { msg: `${sellTrades.length} sells, ${buyTrades.length} buys scanned` });
 
-        const { receipt } = scoreFromTracker(wallet, scoringTokens, aths, prices, solUsd, symbols);
+        const { positions, receipt } = scoreFromTracker(wallet, scoringTokens, aths, prices, solUsd, symbols);
         const worstSingleSell = findWorstSingleSell(sellTrades, aths, symbols, solUsd);
+        const scoredByMint = new Map(positions.map((p) => [p.mint, p]));
+        const shortestHold = findShortestHold(buyTrades, sellTrades, scoredByMint, symbols, solUsd);
+        const dayFromHell = findDayFromHell(sellTrades, aths, solUsd);
 
         // Annotate receipt with scope context so the UI can show "top N of M sold positions".
         const scopedReceipt: CopeReceipt = {
           ...receipt,
           worstSingleSell,
+          shortestHold,
+          dayFromHell,
           totalSoldPositions: totalRanked,
           scoredPositions: mints.length,
+          solUsd,
         };
 
         // Await cache writes before closing so serverless doesn't kill us mid-set.

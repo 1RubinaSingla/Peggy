@@ -58,6 +58,23 @@ export type WorstSingleSell = {
   fumbleSol: number;     // (ath - sell) * tokens, converted to SOL at current rate
 };
 
+export type ShortestHold = {
+  mint: string;
+  symbol: string | null;
+  firstBuyTs: number;    // ms
+  firstSellTs: number;   // ms
+  holdMs: number;
+  peakCopeSol: number;
+  peakMultiplier: number;
+};
+
+export type DayFromHell = {
+  dateMs: number;        // UTC midnight of that day
+  fumbleSol: number;
+  sellCount: number;
+  symbols: string[];     // up to 5 tickers fumbled that day, biggest first
+};
+
 export type CopeReceipt = {
   wallet: string;
   tokensEvaluated: number;
@@ -68,9 +85,13 @@ export type CopeReceipt = {
   worstSell: ScoredLot | null;
   worstSingleSell: WorstSingleSell | null;
   bestHoldThatNeverWas: ScoredLot | null;
+  biggestCopeMultiplier?: ScoredLot | null;
+  shortestHold?: ShortestHold | null;
+  dayFromHell?: DayFromHell | null;
   tier: Tier;
   totalSoldPositions?: number;  // total positions with any sells (before slicing by depth)
   scoredPositions?: number;     // positions actually scored (depth-limited)
+  solUsd?: number;              // SOL/USD rate at scoring time — for UI approximations
 };
 
 export type Tier = {

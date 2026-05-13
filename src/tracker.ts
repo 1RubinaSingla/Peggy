@@ -195,14 +195,15 @@ export async function getWalletTradesPage(wallet: string, cursor?: string): Prom
   return st<TradesResponse>(`/wallet/${wallet}/trades${qs}`);
 }
 
-// Fetch sell trades (token → SOL) for the wallet, filtering to mints we care about.
+// Fetch buy + sell trades for the wallet, filtering to mints we care about.
 // Paginates up to maxPages; for free-tier safety we cap rather than scanning lifetime.
-export async function getWalletSellTrades(
+export async function getWalletTokenTrades(
   wallet: string,
   mintsOfInterest: Set<string>,
   maxPages = 3,
-): Promise<Trade[]> {
-  const out: Trade[] = [];
+): Promise<{ buys: Trade[]; sells: Trade[] }> {
+  const buys: Trade[] = [];
+  const sells: Trade[] = [];
   let cursor: string | undefined;
   for (let page = 0; page < maxPages; page++) {
     const resp = await getWalletTradesPage(wallet, cursor);
@@ -210,14 +211,19 @@ export async function getWalletSellTrades(
     if (!trades.length) break;
     for (const t of trades) {
       // SELL: user sent a non-WSOL token, received WSOL.
-      if (t.to.address !== WSOL || t.from.address === WSOL) continue;
-      if (!mintsOfInterest.has(t.from.address)) continue;
-      out.push(t);
+      if (t.to.address === WSOL && t.from.address !== WSOL && mintsOfInterest.has(t.from.address)) {
+        sells.push(t);
+        continue;
+      }
+      // BUY: user sent WSOL, received a non-WSOL token.
+      if (t.from.address === WSOL && t.to.address !== WSOL && mintsOfInterest.has(t.to.address)) {
+        buys.push(t);
+      }
     }
     if (!resp.nextCursor) break;
     cursor = resp.nextCursor;
   }
-  return out;
+  return { buys, sells };
 }
 
 export async function getTokenInfoBatch(
