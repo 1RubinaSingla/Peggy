@@ -2,6 +2,7 @@
 // Shared between the live scoring page and the /r/[wallet] share page.
 
 import type { CopeReceipt } from "../../src/types.ts";
+import { CopyButton } from "./CopyButton.tsx";
 
 export function fmtSol(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M SOL`;
@@ -58,6 +59,7 @@ function CaRow({ mint }: { mint: string }) {
       >
         {mint}
       </a>
+      <CopyButton text={mint} label="contract address" />
     </div>
   );
 }
@@ -116,7 +118,7 @@ export function Receipt({ receipt: r }: { receipt: CopeReceipt }) {
         {r.worstSingleSell && r.worstSingleSell.fumbleSol > 0 && (
           <div className="fumble">
             <div className="fumble-tag">worst single sell</div>
-            <div className="fumble-symbol">${r.worstSingleSell.symbol ?? shortAddr(r.worstSingleSell.mint)}</div>
+            <div className="fumble-symbol">${r.worstSingleSell.symbol || shortAddr(r.worstSingleSell.mint)}</div>
             <CaRow mint={r.worstSingleSell.mint} />
             <div className="fumble-detail">
               on {fmtDate(r.worstSingleSell.ts)}, sold {fmtTokens(r.worstSingleSell.tokensSold)} tokens
@@ -134,7 +136,7 @@ export function Receipt({ receipt: r }: { receipt: CopeReceipt }) {
         {r.worstSell && r.worstSell.peakCopeSol > 0 && (
           <div className="fumble">
             <div className="fumble-tag">worst fumble</div>
-            <div className="fumble-symbol">${r.worstSell.symbol ?? shortAddr(r.worstSell.mint)}</div>
+            <div className="fumble-symbol">${r.worstSell.symbol || shortAddr(r.worstSell.mint)}</div>
             <CaRow mint={r.worstSell.mint} />
             <div className="fumble-detail">
               sold {r.worstSell.tokenAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
@@ -155,7 +157,7 @@ export function Receipt({ receipt: r }: { receipt: CopeReceipt }) {
             <div className="fumble">
               <div className="fumble-tag">biggest cope</div>
               <div className="fumble-symbol">
-                ${r.biggestCopeMultiplier.symbol ?? shortAddr(r.biggestCopeMultiplier.mint)}
+                ${r.biggestCopeMultiplier.symbol || shortAddr(r.biggestCopeMultiplier.mint)}
               </div>
               <CaRow mint={r.biggestCopeMultiplier.mint} />
               <div className="fumble-detail">
@@ -172,7 +174,7 @@ export function Receipt({ receipt: r }: { receipt: CopeReceipt }) {
         {r.shortestHold && r.shortestHold.peakCopeSol > 0 && (
           <div className="fumble">
             <div className="fumble-tag">shortest hold</div>
-            <div className="fumble-symbol">${r.shortestHold.symbol ?? shortAddr(r.shortestHold.mint)}</div>
+            <div className="fumble-symbol">${r.shortestHold.symbol || shortAddr(r.shortestHold.mint)}</div>
             <CaRow mint={r.shortestHold.mint} />
             <div className="fumble-detail">
               you held for {fmtDuration(r.shortestHold.holdMs)} before exiting
@@ -206,7 +208,7 @@ export function Receipt({ receipt: r }: { receipt: CopeReceipt }) {
             <div className="fumble">
               <div className="fumble-tag amber">best hold-that-never-was</div>
               <div className="fumble-symbol">
-                ${r.bestHoldThatNeverWas.symbol ?? shortAddr(r.bestHoldThatNeverWas.mint)}
+                ${r.bestHoldThatNeverWas.symbol || shortAddr(r.bestHoldThatNeverWas.mint)}
               </div>
               <CaRow mint={r.bestHoldThatNeverWas.mint} />
               <div className="fumble-detail">still alive. still mooning. without you.</div>

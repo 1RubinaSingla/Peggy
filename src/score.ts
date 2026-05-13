@@ -97,33 +97,38 @@ export function findShortestHold(
   symbols: Map<string, string>,
   solUsd: number,
 ): ShortestHold | null {
-  const firstBuy = new Map<string, number>();
+  // Track first-buy timestamp + symbol from trade metadata.
+  const firstBuy = new Map<string, { ts: number; symbol?: string }>();
   for (const t of buys) {
     const mint = t.to.address;
     const prev = firstBuy.get(mint);
-    if (prev === undefined || t.time < prev) firstBuy.set(mint, t.time);
+    if (!prev || t.time < prev.ts) {
+      firstBuy.set(mint, { ts: t.time, symbol: t.to.token?.symbol });
+    }
   }
-  const firstSell = new Map<string, number>();
+  const firstSell = new Map<string, { ts: number; symbol?: string }>();
   for (const t of sells) {
     const mint = t.from.address;
     const prev = firstSell.get(mint);
-    if (prev === undefined || t.time < prev) firstSell.set(mint, t.time);
+    if (!prev || t.time < prev.ts) {
+      firstSell.set(mint, { ts: t.time, symbol: t.from.token?.symbol });
+    }
   }
 
   let best: ShortestHold | null = null;
-  for (const [mint, buyTs] of firstBuy) {
-    const sellTs = firstSell.get(mint);
-    if (sellTs === undefined || sellTs <= buyTs) continue;
+  for (const [mint, buy] of firstBuy) {
+    const sell = firstSell.get(mint);
+    if (!sell || sell.ts <= buy.ts) continue;
     const scored = scoredByMint.get(mint);
     if (!scored || scored.excluded || scored.peakCopeUsd <= 0) continue;
 
-    const holdMs = sellTs - buyTs;
+    const holdMs = sell.ts - buy.ts;
     if (!best || holdMs < best.holdMs) {
       best = {
         mint,
-        symbol: scored.symbol ?? symbols.get(mint) ?? null,
-        firstBuyTs: buyTs,
-        firstSellTs: sellTs,
+        symbol: buy.symbol || sell.symbol || scored.symbol || symbols.get(mint) || null,
+        firstBuyTs: buy.ts,
+        firstSellTs: sell.ts,
         holdMs,
         peakCopeSol: scored.peakCopeUsd / solUsd,
         peakMultiplier: scored.peakMultiplier,
