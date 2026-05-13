@@ -33,55 +33,57 @@ function GitHubIcon() {
 export function Navbar() {
   const pathname = usePathname();
   return (
-    <nav className="navbar" aria-label="primary">
-      <Link href="/" className="nav-brand">
-        <Image
-          src="/logo.png"
-          alt="peggy"
-          width={28}
-          height={28}
-          priority
-          className="brand-logo"
-        />
-        <span className="brand-mark">peggy.cash</span>
-        <span className="brand-tag">the cope calculator</span>
-      </Link>
-      <ul className="nav-links">
-        {LINKS.map((l) => {
-          const active = pathname === l.href || pathname.startsWith(l.href + "/");
-          return (
-            <li key={l.href}>
-              <Link href={l.href} className={active ? "active" : undefined}>
-                {l.label}
-              </Link>
-            </li>
-          );
-        })}
-        <li>
-          <a
-            href={X_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="nav-icon"
-            aria-label="@PeggyOnPF on X"
-            title="@PeggyOnPF"
-          >
-            <XIcon />
-          </a>
-        </li>
-        <li>
-          <a
-            href={GH_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="nav-icon"
-            aria-label="source on GitHub"
-            title="GitHub"
-          >
-            <GitHubIcon />
-          </a>
-        </li>
-      </ul>
-    </nav>
+    <div className="nav-wrap">
+      <nav className="navbar" aria-label="primary">
+        <Link href="/" className="nav-brand">
+          <Image
+            src="/logo.png"
+            alt="peggy"
+            width={28}
+            height={28}
+            priority
+            className="brand-logo"
+          />
+          <span className="brand-mark">peggy.cash</span>
+          <span className="brand-tag">the cope calculator</span>
+        </Link>
+        <ul className="nav-links">
+          {LINKS.map((l) => {
+            const active = pathname === l.href || pathname.startsWith(l.href + "/");
+            return (
+              <li key={l.href}>
+                <Link href={l.href} className={active ? "active" : undefined}>
+                  {l.label}
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <a
+              href={X_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav-pill"
+              aria-label="@PeggyOnPF on X"
+            >
+              <XIcon />
+              <span>@PeggyOnPF</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href={GH_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav-pill"
+              aria-label="source on GitHub"
+            >
+              <GitHubIcon />
+              <span>GitHub</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
   );
 }
