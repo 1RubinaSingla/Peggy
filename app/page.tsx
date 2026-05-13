@@ -172,6 +172,7 @@ function PageInner() {
   return (
     <main>
       <header className="hero">
+        <p className="hero-kicker">know your cope score</p>
         <h1 className="hero-title">the number you don&apos;t want to know.</h1>
         <p className="hero-pitch">
           paste your wallet. we replay every memecoin you sold and tell you what you&apos;d have

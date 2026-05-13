@@ -146,6 +146,19 @@ main {
   margin: 24px 0 40px;
 }
 
+.hero-kicker {
+  color: var(--accent);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+.hero-kicker::before {
+  content: "▸ ";
+  color: var(--accent-dim);
+}
+
 .hero-title {
   font-size: 32px;
   font-weight: 600;
