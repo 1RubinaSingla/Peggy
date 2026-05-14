@@ -767,6 +767,125 @@ button.cta:disabled {
   line-height: 1.55;
 }
 
+.airdrop-card {
+  margin: 28px 0 12px;
+  background: linear-gradient(180deg, rgba(77, 141, 247, 0.08) 0%, var(--bg-elev) 60%);
+  border: 1px solid rgba(77, 141, 247, 0.35);
+  border-radius: 10px;
+  padding: 22px;
+}
+.airdrop-head { margin-bottom: 16px; }
+.airdrop-tag {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(77, 141, 247, 0.15);
+  padding: 3px 9px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.airdrop-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  color: var(--fg);
+}
+.airdrop-sub {
+  color: var(--fg-muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 56ch;
+}
+
+.airdrop-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elev-2);
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.airdrop-cta:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.airdrop-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+.airdrop-cta.primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.airdrop-cta.primary:hover:not(:disabled) {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+  color: var(--bg);
+}
+
+.airdrop-status {
+  font-size: 13px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+}
+.airdrop-status.muted { color: var(--fg-dim); }
+.airdrop-status.error { color: var(--warn); display: flex; flex-direction: column; gap: 10px; }
+.airdrop-status.error .airdrop-cta { align-self: flex-start; }
+.airdrop-reason { font-size: 11.5px; color: var(--fg-dim); margin-top: 4px; }
+
+.airdrop-wallet {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.airdrop-ready { display: flex; flex-direction: column; gap: 10px; }
+.airdrop-amount {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+.airdrop-ticker { color: var(--fg); font-size: 16px; font-weight: 500; }
+.airdrop-tier { color: var(--fg-muted); font-size: 13px; }
+.airdrop-tier strong { color: var(--accent); font-weight: 600; }
+.airdrop-ready .airdrop-cta { align-self: flex-start; margin-top: 6px; }
+
+.airdrop-claimed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.airdrop-claimed-headline {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+.airdrop-tx {
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-size: 13px;
+  align-self: flex-start;
+  border-bottom: 1px solid var(--border-strong);
+  padding-bottom: 1px;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.airdrop-tx:hover { color: var(--accent); border-color: var(--accent); }
+
+@media (max-width: 640px) {
+  .airdrop-card { padding: 18px 16px; }
+  .airdrop-title { font-size: 18px; }
+  .airdrop-amount { font-size: 24px; }
+}
+
 @media (max-width: 640px) {
   .lb-card { padding: 16px 14px; }
   .lb-row { grid-template-columns: 32px 1fr auto; gap: 10px; }

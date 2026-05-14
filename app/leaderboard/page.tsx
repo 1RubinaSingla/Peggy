@@ -5,6 +5,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getWallOfPain, type LeaderboardEntry } from "../../src/leaderboard.ts";
+import { AirdropClaim } from "../components/AirdropClaim.tsx";
 import { fmtSol, fmtUsd, shortAddr } from "../components/Receipt.tsx";
 
 export const metadata: Metadata = {
@@ -83,6 +84,8 @@ export default async function LeaderboardPage() {
           </ol>
         )}
       </section>
+
+      <AirdropClaim />
 
       <p className="lb-note">
         wallets are added automatically when they&apos;re scored. dust and zero-cope wallets are

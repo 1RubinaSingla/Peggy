@@ -11,10 +11,14 @@
     "debug": "node --env-file=.env --experimental-strip-types src/debug.ts"
   },
   "dependencies": {
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.95.5",
     "@upstash/redis": "^1.38.0",
+    "bs58": "^6.0.0",
     "next": "^15.0.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
