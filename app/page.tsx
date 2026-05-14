@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import type { CopeReceipt } from "../src/types.ts";
@@ -320,6 +321,37 @@ function PageInner() {
       )}
 
       {receipt && <Receipt receipt={receipt} />}
+
+      <section className="peggy-intro">
+        <div className="peggy-intro-head">
+          <span className="peggy-intro-tag">$peggy</span>
+          <h2 className="peggy-intro-title">the cope reward</h2>
+        </div>
+        <p className="peggy-intro-body">
+          peggy.cash has a native Solana token — <span className="hl-accent">$PEGGY</span>. the
+          top 20 wallets on the wall of pain are airdropped a tiered amount of $PEGGY directly to
+          their wallet. no presale. no team allocation. every $PEGGY in circulation enters the
+          world by being claimed off the leaderboard.
+        </p>
+        <ul className="peggy-intro-bullets">
+          <li>
+            <span className="peggy-intro-bullet-k">rank</span>
+            <span>top 20 on /leaderboard, refreshed every 30s, 7-day window</span>
+          </li>
+          <li>
+            <span className="peggy-intro-bullet-k">tier</span>
+            <span>#1 → 5× · #2-3 → 3× · #4-10 → 1.5× · #11-20 → 1×</span>
+          </li>
+          <li>
+            <span className="peggy-intro-bullet-k">claim</span>
+            <span>connect phantom, sign a one-line message, get the airdrop on-chain</span>
+          </li>
+        </ul>
+        <div className="peggy-intro-actions">
+          <Link href="/leaderboard" className="peggy-intro-cta primary">see the leaderboard →</Link>
+          <Link href="/whitepaper" className="peggy-intro-cta">read the whitepaper →</Link>
+        </div>
+      </section>
 
       <footer className="footer">peggy.cash · the more you cope, the more we know</footer>
     </main>

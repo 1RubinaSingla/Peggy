@@ -64,13 +64,13 @@ main {
 }
 
 .navbar {
-  max-width: 720px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 8px 8px 8px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   background: rgba(17, 17, 20, 0.72);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -129,8 +129,14 @@ main {
 }
 .nav-pill svg { width: 13px; height: 13px; display: block; flex-shrink: 0; }
 
-@media (max-width: 880px) {
+/* As the leaderboard + whitepaper + methodology pills land, content gets
+   tight inside the 880px pill. Below 1024px, drop the brand-tag and let the
+   X / GitHub buttons collapse to icon-only — keeps the navbar from wrapping
+   or sticking out. */
+@media (max-width: 1024px) {
   .nav-brand .brand-tag { display: none; }
+  .nav-pill span { display: none; }
+  .nav-pill { padding: 6px 8px; }
 }
 
 @media (max-width: 640px) {
@@ -138,7 +144,6 @@ main {
   .navbar { padding: 6px 6px 6px 12px; gap: 8px; }
   .nav-brand .brand-mark { font-size: 15px; }
   .nav-links a { padding: 5px 10px; font-size: 12px; }
-  .nav-pill span { display: none; }
   .nav-pill { padding: 5px 8px; }
   .nav-pill svg { width: 13px; height: 13px; }
 }
@@ -973,6 +978,106 @@ button.cta:disabled {
   .lb-rank { font-size: 15px; }
   .lb-wallet { font-size: 13px; }
   .lb-sol { font-size: 14px; }
+}
+
+/* ─── home page $PEGGY intro ──────────────────────────────────── */
+
+.peggy-intro {
+  margin: 40px 0 24px;
+  padding: 22px 24px;
+  background: linear-gradient(180deg, rgba(77, 141, 247, 0.08) 0%, var(--bg-elev) 70%);
+  border: 1px solid rgba(77, 141, 247, 0.32);
+  border-radius: 10px;
+}
+
+.peggy-intro-head { margin-bottom: 12px; }
+.peggy-intro-tag {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(77, 141, 247, 0.15);
+  padding: 3px 9px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.peggy-intro-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--fg);
+}
+.peggy-intro-body {
+  color: var(--fg-muted);
+  line-height: 1.6;
+  margin: 0 0 14px;
+  max-width: 62ch;
+  font-size: 13.5px;
+}
+
+.peggy-intro-bullets {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.peggy-intro-bullets li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+.peggy-intro-bullet-k {
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.peggy-intro-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.peggy-intro-cta {
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elev-2);
+  color: var(--fg);
+  text-decoration: none;
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+.peggy-intro-cta:hover { border-color: var(--accent); color: var(--accent); }
+.peggy-intro-cta.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.peggy-intro-cta.primary:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+  color: var(--bg);
+}
+
+@media (max-width: 640px) {
+  .peggy-intro { padding: 18px 16px; }
+  .peggy-intro-title { font-size: 17px; }
+  .peggy-intro-bullets li { grid-template-columns: 1fr; gap: 2px; }
 }
 
 /* ─── footer ──────────────────────────────────────────────────── */
