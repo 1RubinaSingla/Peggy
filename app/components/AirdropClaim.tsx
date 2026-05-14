@@ -63,7 +63,7 @@ function getPhantom(): PhantomProvider | null {
 
 export function AirdropClaim() {
   const [configured, setConfigured] = useState<boolean | null>(null);
-  const [symbol, setSymbol] = useState("COPE");
+  const [symbol, setSymbol] = useState("PEGGY");
   const [wallet, setWallet] = useState<string | null>(null);
   const [state, setState] = useState<UIState>({ kind: "idle" });
   const [hasPhantom, setHasPhantom] = useState(false);

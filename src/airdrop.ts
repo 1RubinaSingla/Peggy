@@ -44,7 +44,7 @@ export type AirdropConfig = {
   baseAmount?: number;       // human units; multiplied by tier and 10^decimals before transfer
   rpcUrl?: string;
   signer?: Keypair;
-  tokenSymbol: string;       // for display only; defaults to "COPE"
+  tokenSymbol: string;       // for display only; defaults to "PEGGY"
 };
 
 let cachedConfig: AirdropConfig | null = null;
@@ -52,7 +52,7 @@ let cachedConfig: AirdropConfig | null = null;
 export function getAirdropConfig(): AirdropConfig {
   if (cachedConfig) return cachedConfig;
 
-  const tokenSymbol = (process.env.AIRDROP_TOKEN_SYMBOL ?? "COPE").trim();
+  const tokenSymbol = (process.env.AIRDROP_TOKEN_SYMBOL ?? "PEGGY").trim();
   const enabled = process.env.AIRDROP_ENABLED === "true";
   if (!enabled) {
     cachedConfig = { enabled: false, tokenSymbol };

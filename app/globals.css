@@ -282,10 +282,91 @@ main {
 
 .hl { color: var(--fg); }
 .hl-warn { color: var(--warn); }
+.hl-accent { color: var(--accent); }
+.hl-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(77, 141, 247, 0.4);
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.hl-link:hover { border-bottom-color: var(--accent); color: var(--accent-dim); }
+
+/* ─── whitepaper-specific ─────────────────────────────────────── */
+
+.whitepaper .hero-pitch { max-width: 64ch; }
+
+.wp-toc {
+  margin: 28px 0 44px;
+  padding: 18px 20px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.wp-toc-head {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin-bottom: 12px;
+}
+.wp-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 24px;
+}
+.wp-toc-list a {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0;
+  color: var(--fg-muted);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+.wp-toc-list a:hover { color: var(--accent); }
+.wp-toc-num {
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.wp-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  scroll-margin-top: 100px;
+}
+.wp-num {
+  color: var(--fg-dim);
+  font-weight: 500;
+}
+
+.wp-subhead {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 22px 0 10px;
+}
 
 @media (max-width: 640px) {
   .kv > div { grid-template-columns: 1fr; gap: 4px; }
   .tier-list .range { min-width: 80px; }
+  .wp-toc-list { grid-template-columns: 1fr; }
+  .wp-toc { padding: 14px 16px; }
 }
 
 /* ─── card primitive ──────────────────────────────────────────── */
