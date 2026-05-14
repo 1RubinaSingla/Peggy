@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { findDayFromHell, findShortestHold, findWorstSingleSell, scoreFromTracker } from "../../../src/score.ts";
+import { recordWalletScore } from "../../../src/leaderboard.ts";
 import {
   getAthBatch,
   getCurrentSolUsd,
@@ -139,6 +140,7 @@ export async function GET(req: NextRequest) {
         await Promise.all([
           cacheSet(receiptKey(wallet, limit), scopedReceipt, RECEIPT_TTL_SECONDS),
           cacheSet(latestReceiptKey(wallet), scopedReceipt, RECEIPT_TTL_SECONDS),
+          recordWalletScore(scopedReceipt),
         ]);
 
         send("done", { empty: false, receipt: scopedReceipt });

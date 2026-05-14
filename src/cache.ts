@@ -14,8 +14,13 @@ const redis = upstashEnabled ? new Redis({ url: URL!, token: TOKEN! }) : null;
 // Pinned to globalThis so HMR-induced module reloads don't drop the cache between routes.
 // In serverless prod this is per-instance and useless across cold starts — Upstash takes over.
 type Entry = { value: unknown; expiresAt: number };
-const G = globalThis as unknown as { __peggyCache?: Map<string, Entry> };
+type SortedEntry = { member: string; score: number };
+const G = globalThis as unknown as {
+  __peggyCache?: Map<string, Entry>;
+  __peggySorted?: Map<string, SortedEntry[]>;
+};
 const localCache: Map<string, Entry> = G.__peggyCache ?? (G.__peggyCache = new Map());
+const localSorted: Map<string, SortedEntry[]> = G.__peggySorted ?? (G.__peggySorted = new Map());
 
 export const cacheEnabled = () => true; // always "enabled" — falls back to memory if no Redis
 
@@ -62,3 +67,57 @@ export function latestReceiptKey(wallet: string): string {
 
 // Receipt TTL: 24h. Memecoin prices move; we don't want stale ATHs forever.
 export const RECEIPT_TTL_SECONDS = 60 * 60 * 24;
+
+// ── Sorted set primitives — used by the leaderboard ─────────────────────────────
+// Upstash: native ZADD / ZREVRANGE. Local: a sorted array per key, kept descending.
+
+export async function sortedAdd(key: string, score: number, member: string): Promise<void> {
+  if (redis) {
+    try {
+      await redis.zadd(key, { score, member });
+    } catch {
+      // silent — leaderboard failures should never break scoring
+    }
+    return;
+  }
+  const arr = localSorted.get(key) ?? [];
+  const filtered = arr.filter((e) => e.member !== member);
+  filtered.push({ member, score });
+  filtered.sort((a, b) => b.score - a.score);
+  localSorted.set(key, filtered);
+}
+
+export async function sortedTopDesc(key: string, count: number): Promise<{ member: string; score: number }[]> {
+  if (redis) {
+    try {
+      // upstash typing varies by client version — use withScores to get pairs
+      const raw = (await redis.zrange(key, 0, count - 1, { rev: true, withScores: true })) as unknown[];
+      const out: { member: string; score: number }[] = [];
+      for (let i = 0; i < raw.length; i += 2) {
+        const member = raw[i] as string;
+        const score = Number(raw[i + 1]);
+        if (member) out.push({ member, score });
+      }
+      return out;
+    } catch {
+      return [];
+    }
+  }
+  return (localSorted.get(key) ?? []).slice(0, count);
+}
+
+export async function sortedRemove(key: string, members: string[]): Promise<void> {
+  if (!members.length) return;
+  if (redis) {
+    try {
+      await redis.zrem(key, ...members);
+    } catch {
+      // silent
+    }
+    return;
+  }
+  const arr = localSorted.get(key);
+  if (!arr) return;
+  const drop = new Set(members);
+  localSorted.set(key, arr.filter((e) => !drop.has(e.member)));
+}

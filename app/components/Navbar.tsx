@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
+  { href: "/leaderboard", label: "leaderboard" },
   { href: "/methodology", label: "methodology" },
 ];
 
