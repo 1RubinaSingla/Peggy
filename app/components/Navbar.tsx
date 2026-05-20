@@ -14,7 +14,7 @@ const LINKS = [
 ];
 
 const X_URL = "https://x.com/PeggyOnPF";
-const GH_URL = "https://github.com/dev79-code/CopeScore";
+const GH_URL = "https://github.com/1RubinaSingla/Peggy";
 
 function XIcon() {
   return (

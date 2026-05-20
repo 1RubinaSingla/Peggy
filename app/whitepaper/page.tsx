@@ -16,10 +16,13 @@ const SECTIONS = [
   { id: "peggy", n: "06", title: "what is $peggy" },
   { id: "airdrop", n: "07", title: "the airdrop claim" },
   { id: "architecture", n: "08", title: "architecture" },
-  { id: "privacy", n: "09", title: "privacy & trust" },
-  { id: "limits", n: "10", title: "what we can't see" },
-  { id: "roadmap", n: "11", title: "roadmap" },
+  { id: "open-source", n: "09", title: "open source" },
+  { id: "privacy", n: "10", title: "privacy & trust" },
+  { id: "limits", n: "11", title: "what we can't see" },
+  { id: "roadmap", n: "12", title: "roadmap" },
 ];
+
+const REPO_URL = "https://github.com/1RubinaSingla/Peggy";
 
 function H({ n, title, id }: { n: string; title: string; id: string }) {
   return (
@@ -262,7 +265,45 @@ diamond_cope_sol = Σ max(0, current_price_usd - avg_sell_price_usd) × tokens_s
 
       {/* ──────────────────────────────────────────────────────────── */}
       <section className="doc-section">
-        <H n="09" title="privacy & trust" id="privacy" />
+        <H n="09" title="open source" id="open-source" />
+        <p>
+          the entire stack is public. every component described in this document — the scoring
+          pipeline, the leaderboard, the airdrop claim flow, the whitepaper you&apos;re reading
+          right now — lives in one repo under an MIT license. fork it, run it, fix our bugs, or
+          ship a worse version. all fine.
+        </p>
+        <dl className="kv">
+          <div><dt>repo</dt><dd><a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="hl-link">{REPO_URL.replace("https://", "")}</a></dd></div>
+          <div><dt>license</dt><dd>MIT · permissive · do whatever, just keep the notice</dd></div>
+          <div><dt>language</dt><dd>typescript · next.js 15 app router · server components by default</dd></div>
+          <div><dt>commit cadence</dt><dd>main is always shippable; every push deploys to vercel.</dd></div>
+        </dl>
+        <h3 className="wp-subhead">run it locally</h3>
+        <pre className="formula">
+{`git clone ${REPO_URL}
+cd Peggy
+npm install
+# set SOLANA_TRACKER_API_KEY in .env  (rest is optional)
+npm run dev   # http://localhost:3000`}
+        </pre>
+        <p>
+          the scoring pipeline works with just the solana tracker key. upstash redis, the airdrop
+          env vars, and the rpc url are all optional — the app falls back to an in-memory cache
+          and hides the claim card if anything is missing. nothing breaks.
+        </p>
+        <h3 className="wp-subhead">contributing</h3>
+        <p>
+          PRs welcome. bug reports especially welcome if you find a wallet where the score is
+          clearly wrong — that&apos;s how the dust filters and exclusions get better. the codebase
+          is small enough to read end-to-end in one sitting; the data layer is{" "}
+          <span className="hl">src/</span>, the routes are <span className="hl">app/api/</span>,
+          everything else is rendering.
+        </p>
+      </section>
+
+      {/* ──────────────────────────────────────────────────────────── */}
+      <section className="doc-section">
+        <H n="10" title="privacy & trust" id="privacy" />
         <p>
           peggy.cash has no accounts, no email, no analytics tying you to a session. you paste a
           wallet, we score it, the result is public — same as the on-chain history it came from.
@@ -281,7 +322,7 @@ diamond_cope_sol = Σ max(0, current_price_usd - avg_sell_price_usd) × tokens_s
 
       {/* ──────────────────────────────────────────────────────────── */}
       <section className="doc-section">
-        <H n="10" title="what we can't see" id="limits" />
+        <H n="11" title="what we can't see" id="limits" />
         <p>this is an entertainment product. the math is honest, but it has limits:</p>
         <dl className="kv">
           <div><dt>spl ↔ spl swaps</dt><dd>we only score sells where the trader received SOL. routing through an intermediate token hides the trade.</dd></div>
@@ -298,7 +339,7 @@ diamond_cope_sol = Σ max(0, current_price_usd - avg_sell_price_usd) × tokens_s
 
       {/* ──────────────────────────────────────────────────────────── */}
       <section className="doc-section">
-        <H n="11" title="roadmap" id="roadmap" />
+        <H n="12" title="roadmap" id="roadmap" />
         <ul className="num-list">
           <li>liquidity-floor on ATH so dead-token peaks don&apos;t inflate scores.</li>
           <li>trade-time sol/usd conversion for historical accuracy.</li>
