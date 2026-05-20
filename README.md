@@ -1,6 +1,19 @@
-# peggy.cash
+<h1 align="center">peggy.cash</h1>
 
-> the number you don&apos;t want to know.
+<p align="center"><em>the number you don&apos;t want to know.</em></p>
+
+<p align="center">
+  <a href="https://peggy.cash"><img alt="live: peggy.cash" src="https://img.shields.io/badge/live-peggy.cash-4d8df7?style=flat-square"></a>
+  <a href="LICENSE"><img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
+  <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-000?style=flat-square&logo=next.js">
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript&logoColor=white">
+  <img alt="Solana mainnet" src="https://img.shields.io/badge/Solana-mainnet-9945FF?style=flat-square&logo=solana&logoColor=white">
+</p>
+
+<p align="center">
+  <img src=".github/screenshot.png" alt="peggy.cash home page screenshot" width="820">
+</p>
 
 a public, on-chain regret calculator for Solana memecoin traders. paste a wallet, get back two
 numbers — **peak cope** and **diamond cope** — that quantify how much SOL you fumbled by selling.
@@ -12,7 +25,6 @@ tiered `$PEGGY` airdrop directly from the site.
   architecture, tokenomics, and the security model
 - **methodology:** [peggy.cash/methodology](https://peggy.cash/methodology) — the math, the
   exclusions, what we can and can&apos;t see
-- **license:** MIT
 
 ---
 
