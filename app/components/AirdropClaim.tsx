@@ -157,9 +157,36 @@ export function AirdropClaim() {
     }
   }
 
-  // Don't render anything until we know whether the feature is configured.
-  if (configured === null) return null;
-  if (!configured) return null;
+  // While the configured probe is in flight, render the shell with a placeholder.
+  if (configured === null) {
+    return (
+      <section className="airdrop-card">
+        <div className="airdrop-head">
+          <span className="airdrop-tag">airdrop</span>
+          <h2 className="airdrop-title">claim your reward</h2>
+        </div>
+        <div className="airdrop-status muted">checking eligibility service…</div>
+      </section>
+    );
+  }
+
+  // Feature flag is off (env vars not set / malformed). Show the card so users
+  // know the section exists; just communicate that it's not live yet.
+  if (!configured) {
+    return (
+      <section className="airdrop-card">
+        <div className="airdrop-head">
+          <span className="airdrop-tag">airdrop</span>
+          <h2 className="airdrop-title">claim your reward</h2>
+          <p className="airdrop-sub">
+            top 20 wallets on the wall of pain will be eligible for a tiered ${symbol} airdrop.
+            launching soon.
+          </p>
+        </div>
+        <div className="airdrop-status muted">claims open shortly. follow @PeggyOnPF for the go-live.</div>
+      </section>
+    );
+  }
 
   return (
     <section className="airdrop-card">
