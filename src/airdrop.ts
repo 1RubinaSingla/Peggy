@@ -61,7 +61,9 @@ export function getAirdropConfig(): AirdropConfig {
 
   try {
     const mintStr = required("AIRDROP_TOKEN_MINT");
-    const decimals = parseInt(required("AIRDROP_TOKEN_DECIMALS"), 10);
+    // Defaults to 6 — the pump.fun standard for SPL tokens. Override only if your
+    // mint was created with a non-default decimals value.
+    const decimals = parseInt(process.env.AIRDROP_TOKEN_DECIMALS ?? "6", 10);
     const baseAmount = parseFloat(required("AIRDROP_BASE_AMOUNT"));
     const rpcUrl = required("SOLANA_RPC_URL");
     const signer = parseSignerKey(required("AIRDROP_SIGNER_SECRET_KEY"));
