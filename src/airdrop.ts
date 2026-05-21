@@ -48,6 +48,11 @@ export type AirdropConfig = {
 };
 
 let cachedConfig: AirdropConfig | null = null;
+let lastConfigError: string | null = null;
+
+export function getLastConfigError(): string | null {
+  return lastConfigError;
+}
 
 export function getAirdropConfig(): AirdropConfig {
   if (cachedConfig) return cachedConfig;
@@ -55,6 +60,7 @@ export function getAirdropConfig(): AirdropConfig {
   const tokenSymbol = (process.env.AIRDROP_TOKEN_SYMBOL ?? "PEGGY").trim();
   const enabled = process.env.AIRDROP_ENABLED === "true";
   if (!enabled) {
+    lastConfigError = `AIRDROP_ENABLED is not "true" (got: ${JSON.stringify(process.env.AIRDROP_ENABLED ?? null)})`;
     cachedConfig = { enabled: false, tokenSymbol };
     return cachedConfig;
   }
@@ -84,9 +90,12 @@ export function getAirdropConfig(): AirdropConfig {
       signer,
       tokenSymbol,
     };
+    lastConfigError = null;
   } catch (err) {
     // Don't crash the request — log loudly server-side and fall back to disabled.
+    const msg = err instanceof Error ? err.message : String(err);
     console.error("[airdrop] config error — feature disabled:", err);
+    lastConfigError = msg;
     cachedConfig = { enabled: false, tokenSymbol };
   }
   return cachedConfig;
